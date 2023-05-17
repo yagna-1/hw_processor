@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <title>Processor Simulator</title>
+    <style>
+      #container {
+        max-width: 800px;
+        margin: auto;
+        padding: 20px;
+        font-family: Arial, sans-serif;
+      }
+
+
+      h1 {
+        background-color: #333;
+        color: #fff;
+        display: flex;
+        justify-content: center;
+        padding: 10px;
+        margin: 0;
+      }
+
+
+      #input-section {
+        display: flex;
+        align-items: center;
+        margin-right: auto;
+
+      }
+
+
+      label {
+        margin-right: 5px;
+      }
+
+      input[type="text"] {
+        padding: 5px;
+        font-size: 16px;
+        border-radius: 3px;
+        border: 1px solid #8a8787;
+        margin-right: 10px;
+        width: 150px;
+      }
+
+      select {
+        padding: 10px;
+        border-radius: 5px;
+        border: none;
+        background-color: #f5f5f5;
+        font-size: 1.2em;
+        color: #333;
+        margin-right: 20px;
+        width: 200px;
+      }
+
+      button {
+        padding: 10px 20px;
+        background-color: #0077cc;
+        color: #fff;
+        font-size: 1.2em;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.2s ease-in-out;
+      }
+
+      button:hover {
+        background-color: #005fa3;
+      }
+
+
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-top: 20px;
+        font-size: 1.2em;
+      }
+
+      table,
+      th,
+      td {
+        border: 1px solid black;
+        padding: 10px;
+        text-align: center;
+      }
+
+      th {
+        background-color: #0077cc;
+        color: #fff;
+      }
+
+      td:hover {
+        background-color: #f5f5f5;
+      }
+
+      #output {
+        margin: 20px auto;
+        padding: 10px;
+        border: 1px solid #999;
+        font-size: 16px;
+        white-space: pre-wrap;
+      }
+
+      #output:before {
+        content: "Output:";
+        font-weight: bold;
+      }
+    </style>
+    <script>
+      let RAM = new Array(256).fill(0);
+      let MAR = 0;
+      let PC = 0;
+      let MDR = 0;
+      let INP = 0;
+      let OUTP = 0;
+      let D = 0;
+      let C = 0;
+      let B = 0;
+      let A = 0;
+      let ALU = 0;
+      let SP = 255;
+
+      function updateRAMTable() {
+        let ramTable = document.getElementById("ramTable");
+        ramTable.innerHTML = `
+            <tr>
+              <th>RAM Address</th>
+              <th>Value</th>
+            </tr>`;
+        for (let i = 0; i < RAM.length; i++) {
+          let row = `<tr>
+              <td>${i}</td>
+              <td>${RAM[i]}</td>
+            </tr>`;
+          ramTable.innerHTML += row;
+        }
+      }
+
+      function push() {
+        RAM[SP] = A;
+        SP--;
+        document.getElementById("output").innerHTML += `--> Pushed accumulator value ${A} onto the stack at address ${SP + 1}, decremented SP to ${SP}<br>`;
+      }
+
+      function pop() {
+        SP++;
+        MDR = RAM[SP];
+        A = MDR;
+        RAM[SP] = 0;
+        document.getElementById("output").innerHTML += `--> Popped value ${MDR} from the stack at address ${SP}, set accumulator to ${A}, cleared RAM at address ${SP}<br>`;
+      }
+
+      function execute() {
+        let instruction = document.getElementById("instruction").value;
+        let address = parseInt(document.getElementById("address").value);
+        let data = parseInt(document.getElementById("data").value);
+
+        let output = document.getElementById("output");
+        output.innerHTML += `@ Executing  ${address} ${instruction} ${data}<br>`;
+
+        switch (instruction) {
+          case "load":
+            MAR = address;
+            MDR = RAM[MAR];
+            A = MDR;
+            output.innerHTML += `--> Loaded value ${MDR} from address ${MAR} into accumulator<br>`;
+            break;
+          case "store":
+            MAR = address;
+            MDR = data;
+            RAM[MAR] = MDR;
+            output.innerHTML += `--> Stored value ${MDR} into address ${MAR}<br>`;
+            break;
+          case "div":
+            if (data === 0) {
+              C = 1;
+              output.innerHTML += `--> Attempted to divide by zero at address ${address}<br>`;
+              alert("Attempted to divide by zero at address " + address);
+            } else {
+              C = A % data;
+              A = Math.floor(A / data);
+              output.innerHTML += `--> Divided accumulator value ${A} by ${RAM[address]} and set remainder to C<br>`;
+            }
+            break;
+            break;
+            break;
+          case "addc":
+            ALU = A + data + C;
+            A = ALU & 0xff;
+            C = ALU > 0xff ? 1 : 0;
+            D = A;
+            output.innerHTML += `--> Added ${data} and carry flag to accumulator, result: ${A}, carry flag: ${C}<br>`;
+            break;
+          case "xchg":
+            let temp = A;
+            A = B;
+            B = temp;
+            output.innerHTML += `--> Exchanged values of registers A and B<br>`;
+            break;
+
+          case "push":
+            push();
+            break;
+          case "pop":
+            pop();
+            break;
+          case "xor":
+            let binaryData = parseInt(data).toString(2);
+            A = A ^ parseInt(binaryData, 2);
+            output.innerHTML += `--> XOR'd accumulator value ${A} with binary ${data}<br>`;
+            break;
+
+          default: console.error("Invalid Instruction");
+            output.innerHTML += `--> Invalid instruction: ${instruction}<br>`;
+            break;
+        }
+        updateRAMTable();
+
+        // Update register values in the HTML
+        document.getElementById("mar").textContent = MAR;
+        document.getElementById("pc").textContent = PC;
+        document.getElementById("mdr").textContent = MDR;
+        document.getElementById("inp").textContent = INP;
+        document.getElementById("outp").textContent = OUTP;
+        document.getElementById("d").textContent = D;
+        document.getElementById("c").textContent = C;
+        document.getElementById("b").textContent = B;
+        document.getElementById("a").textContent = A;
+        document.getElementById("alu").textContent = ALU;
+        document.getElementById("sp").textContent = SP;
+      }
+    </script>
+
+  </head>
+
+  <body>
+    <div id="container">
+      <header>
+        <h1>Processor Simulator</h1>
+      </header>
+      <br />
+      <div id="input-section">
+        <label for="instruction">Instruction:</label>
+        <select id="instruction">
+
+          <option value="store">STORE</option>
+          <option value="load">LOAD</option>
+          <option value="div">DIV</option>
+          <option value="addc">ADDC</option>
+          <option value="xchg">XCHG</option>
+          <option value="push">PUSH</option>
+          <option value="pop">POP</option>
+          <option value="xor">XOR</option>
+        </select>
+
+        <label for="address">Address:</label>
+        <input type="text" id="address">
+
+        <label for="data">Data:</label>
+        <input type="text" id="data">
+
+        <button onclick="execute()">Execute</button>
+      </div>
+
+
+      <table>
+        <tr>
+          <th>Register</th>
+          <th>Value</th>
+        </tr>
+        <tr>
+          <td>MAR</td>
+          <td id="mar">0</td>
+        </tr>
+        <tr>
+          <td>PC</td>
+          <td id="pc">0</td>
+        </tr>
+        <tr>
+          <td>MDR</td>
+          <td id="mdr">0</td>
+        </tr>
+        <tr>
+          <td>INP</td>
+          <td id="inp">0</td>
+        </tr>
+        <tr>
+          <td>OUTP</td>
+          <td id="outp">0</td>
+        </tr>
+        <tr>
+          <td>D</td>
+          <td id="d">0</td>
+        </tr>
+        <tr>
+          <td>C</td>
+          <td id="c">0</td>
+        </tr>
+        <tr>
+          <td>B</td>
+          <td id="b">0</td>
+        </tr>
+        <tr>
+          <td>A</td>
+          <td id="a">0</td>
+        </tr>
+        <tr>
+          <td>ALU</td>
+          <td id="alu">0</td>
+        </tr>
+        <tr>
+          <td>SP</td>
+          <td id="sp">0</td>
+        </tr>
+      </table>
+      <div id="output"></div>
+      <table id="ramTable">
+        <tr>
+          <th>RAM Address</th>
+          <th>Value</th>
+        </tr>
+      </table>
+
+
+    </div>
+  </body>
+
+</html>
