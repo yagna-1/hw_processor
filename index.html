@@ -3,108 +3,118 @@
 
   <head>
     <title>Processor Simulator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
-      #container {
-        max-width: 800px;
-        margin: auto;
-        padding: 20px;
-        font-family: Arial, sans-serif;
+      body {
+        font-family: 'Roboto', sans-serif;
+        background-color: #f8f8f8;
       }
 
+      #container {
+        max-width: 900px;
+        margin: auto;
+        padding: 20px;
+        background-color: #ffffff;
+        box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.1);
+        border-radius: 5px;
+      }
 
       h1 {
-        background-color: #333;
+        background-color: #4a90e2;
         color: #fff;
         display: flex;
         justify-content: center;
-        padding: 10px;
+        padding: 15px;
         margin: 0;
+        border-radius: 5px 5px 0 0;
       }
-
 
       #input-section {
         display: flex;
         align-items: center;
-        margin-right: auto;
-
+        justify-content: space-between;
+        flex-wrap: wrap;
+        padding: 20px;
+        background-color: #f6f9fc;
+        border-radius: 5px;
       }
-
 
       label {
         margin-right: 5px;
+        font-weight: 600;
       }
 
-      input[type="text"] {
-        padding: 5px;
-        font-size: 16px;
-        border-radius: 3px;
-        border: 1px solid #8a8787;
-        margin-right: 10px;
-        width: 150px;
-      }
-
+      input[type="text"],
       select {
         padding: 10px;
-        border-radius: 5px;
-        border: none;
-        background-color: #f5f5f5;
-        font-size: 1.2em;
-        color: #333;
-        margin-right: 20px;
-        width: 200px;
+        font-size: 16px;
+        border: 1px solid #dcdfe6;
+        border-radius: 4px;
+        background-color: #ffffff;
+        transition: border-color 0.2s ease-in-out;
+        margin: 10px 0;
+      }
+
+      input[type="text"]:focus,
+      select:focus {
+        border-color: #4a90e2;
+        outline: none;
       }
 
       button {
         padding: 10px 20px;
-        background-color: #0077cc;
+        background-color: #4a90e2;
         color: #fff;
         font-size: 1.2em;
         border: none;
         border-radius: 5px;
         cursor: pointer;
         transition: background-color 0.2s ease-in-out;
+        margin-top: 10px;
       }
 
       button:hover {
-        background-color: #005fa3;
+        background-color: #357ab7;
       }
-
 
       table {
         border-collapse: collapse;
         width: 100%;
-        margin-top: 20px;
-        font-size: 1.2em;
+        margin: 20px 0;
+        font-size: 1.1em;
       }
 
       table,
       th,
       td {
-        border: 1px solid black;
+        border: 1px solid #dcdfe6;
         padding: 10px;
         text-align: center;
       }
 
       th {
-        background-color: #0077cc;
+        background-color: #4a90e2;
         color: #fff;
       }
 
       td:hover {
-        background-color: #f5f5f5;
+        background-color: #f6f9fc;
       }
 
       #output {
         margin: 20px auto;
-        padding: 10px;
-        border: 1px solid #999;
+        padding: 10px 20px;
+        border: 1px solid #e1e4e8;
         font-size: 16px;
-        white-space: pre-wrap;
+        background-color: #f6f9fc;
+        border-radius: 5px;
       }
 
       #output:before {
         content: "Output:";
         font-weight: bold;
+        display: block;
+        margin-bottom: 10px;
       }
     </style>
     <script>
@@ -121,22 +131,56 @@
       let ALU = 0;
       let SP = 255;
 
-      function updateRAMTable() {
-        let ramTable = document.getElementById("ramTable");
-        ramTable.innerHTML = `
-            <tr>
-              <th>RAM Address</th>
-              <th>Value</th>
-            </tr>`;
-        for (let i = 0; i < RAM.length; i++) {
-          let row = `<tr>
-              <td>${i}</td>
-              <td>${RAM[i]}</td>
-            </tr>`;
-          ramTable.innerHTML += row;
+      function validateInputs(address, data) {
+        if (isNaN(address) || isNaN(data)) {
+          alert('Please provide valid numeric values for address and data.');
+          return false;
         }
+        if (address < 0 || address > 255) {
+          alert('Address must be between 0 and 255.');
+          return false;
+        }
+        if (data < 0 || data > 255) {
+          alert('Data must be between 0 and 255.');
+          return false;
+        }
+        return true;
       }
 
+      function updateRAMTable() {
+        const ramTable = document.getElementById("ramTable");
+        const fragment = document.createDocumentFragment();
+        fragment.appendChild(document.createElement('tr'));  // header row
+        fragment.firstChild.innerHTML = `
+        <th>RAM Address</th>
+        <th>Value</th>
+    `;
+
+        for (let i = 0; i < RAM.length; i++) {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${i}</td>
+            <td>${RAM[i]}</td>
+        `;
+          fragment.appendChild(row);
+        }
+        ramTable.innerHTML = '';
+        ramTable.appendChild(fragment);
+      }
+
+      function updateRegisterValues() {
+        document.getElementById("mar").textContent = MAR;
+        document.getElementById("pc").textContent = PC;
+        document.getElementById("mdr").textContent = MDR;
+        document.getElementById("inp").textContent = INP;
+        document.getElementById("outp").textContent = OUTP;
+        document.getElementById("d").textContent = D;
+        document.getElementById("c").textContent = C;
+        document.getElementById("b").textContent = B;
+        document.getElementById("a").textContent = A;
+        document.getElementById("alu").textContent = ALU;
+        document.getElementById("sp").textContent = SP;
+      }
       function push() {
         RAM[SP] = A;
         SP--;
@@ -152,9 +196,9 @@
       }
 
       function execute() {
-        let instruction = document.getElementById("instruction").value;
-        let address = parseInt(document.getElementById("address").value);
-        let data = parseInt(document.getElementById("data").value);
+        const instruction = document.getElementById("instruction").value;
+        const address = parseInt(document.getElementById("address").value);
+        const data = parseInt(document.getElementById("data").value);
 
         let output = document.getElementById("output");
         output.innerHTML += `@ Executing  ${address} ${instruction} ${data}<br>`;
@@ -216,20 +260,16 @@
             break;
         }
         updateRAMTable();
-
-        // Update register values in the HTML
-        document.getElementById("mar").textContent = MAR;
-        document.getElementById("pc").textContent = PC;
-        document.getElementById("mdr").textContent = MDR;
-        document.getElementById("inp").textContent = INP;
-        document.getElementById("outp").textContent = OUTP;
-        document.getElementById("d").textContent = D;
-        document.getElementById("c").textContent = C;
-        document.getElementById("b").textContent = B;
-        document.getElementById("a").textContent = A;
-        document.getElementById("alu").textContent = ALU;
-        document.getElementById("sp").textContent = SP;
+        updateRegisterValues();
       }
+      function validateAddress(inputElement) {
+        let value = parseInt(inputElement.value, 10);
+        if (isNaN(value) || value < 0 || value >= 256) {  // Notice the change here to "value >= 256"
+          alert("Please enter an address between 0 and 255.");
+          inputElement.value = ""; // Reset the value if it's not valid
+        }
+      }
+
     </script>
 
   </head>
@@ -239,28 +279,36 @@
       <header>
         <h1>Processor Simulator</h1>
       </header>
-      <br />
       <div id="input-section">
-        <label for="instruction">Instruction:</label>
-        <select id="instruction">
+        <div>
+          <label for="instruction">Instruction:</label>
+          <select id="instruction">
+            <option value="store">STORE</option>
+            <option value="load">LOAD</option>
+            <option value="div">DIV</option>
+            <option value="addc">ADDC</option>
+            <option value="xchg">XCHG</option>
+            <option value="push">PUSH</option>
+            <option value="pop">POP</option>
+            <option value="xor">XOR</option>
+          </select>
+        </div>
 
-          <option value="store">STORE</option>
-          <option value="load">LOAD</option>
-          <option value="div">DIV</option>
-          <option value="addc">ADDC</option>
-          <option value="xchg">XCHG</option>
-          <option value="push">PUSH</option>
-          <option value="pop">POP</option>
-          <option value="xor">XOR</option>
-        </select>
+        <div>
+          <label for="address">Address:</label>
+          <input type="text" id="address" onchange="validateAddress(this)" maxlength="3"
+            title="Please enter a number between 0 and 255">
 
-        <label for="address">Address:</label>
-        <input type="text" id="address">
+        </div>
 
-        <label for="data">Data:</label>
-        <input type="text" id="data">
+        <div>
+          <label for="data">Data:</label>
+          <input type="text" id="data" pattern="\d*" maxlength="3" title="Please enter a number between 0 and 255">
+        </div>
 
-        <button onclick="execute()">Execute</button>
+        <div>
+          <button onclick="execute()">Execute</button>
+        </div>
       </div>
 
 
